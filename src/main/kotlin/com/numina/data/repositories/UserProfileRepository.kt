@@ -14,6 +14,7 @@ interface UserProfileRepository {
     suspend fun getProfile(userId: Int): UserProfile?
     suspend fun getPublicProfile(userId: Int, requesterId: Int): PublicProfile?
     suspend fun updateProfile(userId: Int, request: UpdateProfileRequest): UserProfile?
+    suspend fun getAllProfilesExcluding(excludeUserId: Int, limit: Int = 100): List<UserProfile>
 }
 
 class UserProfileRepositoryImpl : UserProfileRepository {
@@ -112,5 +113,11 @@ class UserProfileRepositoryImpl : UserProfileRepository {
         UserProfiles.select { UserProfiles.userId eq userId }
             .map { resultRowToProfile(it) }
             .singleOrNull()
+    }
+
+    override suspend fun getAllProfilesExcluding(excludeUserId: Int, limit: Int): List<UserProfile> = transaction {
+        UserProfiles.select { UserProfiles.userId neq excludeUserId }
+            .limit(limit)
+            .map { resultRowToProfile(it) }
     }
 }

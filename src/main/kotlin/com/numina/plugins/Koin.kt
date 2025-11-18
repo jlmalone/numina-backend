@@ -13,6 +13,9 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
+    single<MatchActionRepository> { MatchActionRepositoryImpl() }
+    single<MutualMatchRepository> { MutualMatchRepositoryImpl() }
+    single<MatchPreferencesRepository> { MatchPreferencesRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -30,6 +33,32 @@ val appModule = module {
     single<ClassService> {
         ClassServiceImpl(
             classRepository = get()
+        )
+    }
+    single<ScoreCalculator> { ScoreCalculatorImpl() }
+    single<UserMatcher> {
+        UserMatcherImpl(
+            userProfileRepository = get(),
+            matchActionRepository = get(),
+            scoreCalculator = get()
+        )
+    }
+    single<ClassMatcher> {
+        ClassMatcherImpl(
+            userProfileRepository = get(),
+            classRepository = get(),
+            matchPreferencesRepository = get(),
+            scoreCalculator = get()
+        )
+    }
+    single<MatchingService> {
+        MatchingServiceImpl(
+            userMatcher = get(),
+            classMatcher = get(),
+            matchActionRepository = get(),
+            mutualMatchRepository = get(),
+            userProfileRepository = get(),
+            scoreCalculator = get()
         )
     }
 }
