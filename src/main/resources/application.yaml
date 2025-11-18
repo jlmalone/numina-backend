@@ -1,0 +1,15 @@
+ktor:
+  deployment:
+    port: 8080
+    watch:
+      - com.numina
+  application:
+    modules:
+      - com.numina.ApplicationKt.module
+
+database:
+  type: h2  # Change to 'postgresql' for production
+  # PostgreSQL configuration (uncomment for production)
+  # jdbcUrl: jdbc:postgresql://localhost:5432/numina
+  # user: postgres
+  # password: postgres
