@@ -2,6 +2,7 @@ package com.numina.plugins
 
 import com.numina.routes.authRoutes
 import com.numina.routes.classRoutes
+import com.numina.routes.notificationRoutes
 import com.numina.routes.userRoutes
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -22,5 +23,8 @@ fun Application.configureRouting() {
             userRoutes()
             classRoutes()
         }
+
+        // Notification routes are at /api/v1/notifications and /api/v1/admin/notifications
+        notificationRoutes()
     }
 }

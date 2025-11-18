@@ -334,6 +334,202 @@ Content-Type: application/json
 # Response: 200 OK (returns updated class)
 ```
 
+### Push Notifications (FCM)
+
+The backend supports push notifications via Firebase Cloud Messaging for Android, iOS, and Web platforms.
+
+#### Firebase Setup
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Go to Project Settings > Service Accounts
+3. Click "Generate New Private Key" to download `firebase-service-account.json`
+4. Place the file in `src/main/resources/` (it's already in `.gitignore`)
+5. Update `application.yaml`:
+
+```yaml
+firebase:
+  serviceAccountPath: "src/main/resources/firebase-service-account.json"
+```
+
+**IMPORTANT**: Never commit Firebase credentials to version control!
+
+#### Device Registration
+
+```bash
+POST /api/v1/notifications/register-device
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "platform": "ANDROID",  # or "IOS", "WEB"
+  "token": "fcm-device-token-here"
+}
+
+# Response: 201 Created
+{
+  "id": "uuid",
+  "userId": 1,
+  "platform": "ANDROID",
+  "token": "fcm-device-token-here",
+  "active": true,
+  "createdAt": "2025-01-15T10:00:00Z",
+  "lastUsedAt": "2025-01-15T10:00:00Z"
+}
+```
+
+#### Remove Device
+
+```bash
+DELETE /api/v1/notifications/device/{tokenId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Get Notification Preferences
+
+```bash
+GET /api/v1/notifications/preferences
+Authorization: Bearer <token>
+
+# Response: 200 OK
+{
+  "id": "uuid",
+  "userId": 1,
+  "messagesEnabled": true,
+  "matchesEnabled": true,
+  "groupsEnabled": true,
+  "classRemindersEnabled": true,
+  "socialEnabled": true,
+  "emailFallback": true,
+  "quietHoursStart": "22:00",
+  "quietHoursEnd": "08:00",
+  "updatedAt": "2025-01-15T10:00:00Z"
+}
+```
+
+#### Update Notification Preferences
+
+```bash
+PUT /api/v1/notifications/preferences
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "messagesEnabled": false,
+  "quietHoursStart": "22:00",
+  "quietHoursEnd": "08:00"
+}
+
+# Response: 200 OK (returns updated preferences)
+```
+
+#### Get Notification History
+
+```bash
+GET /api/v1/notifications/history?page=1&pageSize=20
+Authorization: Bearer <token>
+
+# Response: 200 OK
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "userId": 1,
+      "type": "MESSAGE",  # MESSAGE, MATCH, GROUP, REMINDER, SOCIAL, SYSTEM
+      "title": "New Message",
+      "body": "You have a new message from Jane",
+      "data": { "senderId": "123", "conversationId": "456" },
+      "priority": "NORMAL",  # URGENT, HIGH, NORMAL, LOW
+      "read": false,
+      "clicked": false,
+      "sentAt": "2025-01-15T10:00:00Z",
+      "createdAt": "2025-01-15T10:00:00Z"
+    }
+  ],
+  "page": 1,
+  "pageSize": 20,
+  "total": 42
+}
+```
+
+#### Mark Notification as Read
+
+```bash
+POST /api/v1/notifications/{id}/mark-read
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Delete Notification
+
+```bash
+DELETE /api/v1/notifications/{id}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Send Notification (Admin)
+
+```bash
+POST /api/v1/admin/notifications/send
+Authorization: Bearer <token>
+Content-Type: application/json
+
+# Send to single user
+{
+  "userId": 123,
+  "type": "SYSTEM",
+  "title": "System Update",
+  "body": "The app will be updated tonight",
+  "data": { "updateVersion": "2.0" },
+  "priority": "HIGH"
+}
+
+# OR send to multiple users
+{
+  "userIds": [123, 456, 789],
+  "type": "MATCH",
+  "title": "New Match!",
+  "body": "You've been matched with a workout buddy",
+  "priority": "NORMAL"
+}
+
+# Response: 201 Created
+```
+
+#### Broadcast Notification (Admin)
+
+```bash
+POST /api/v1/admin/notifications/broadcast
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "type": "SYSTEM",
+  "title": "System Announcement",
+  "body": "Join us for the community fitness challenge!",
+  "priority": "HIGH"
+}
+
+# Response: 201 Created
+```
+
+#### Notification Types
+
+- **MESSAGE**: New chat messages
+- **MATCH**: New workout partner matches
+- **GROUP**: Group invitations and updates
+- **REMINDER**: Upcoming class reminders
+- **SOCIAL**: Follows, likes, comments
+- **SYSTEM**: System announcements
+
+#### Quiet Hours
+
+Users can set quiet hours (e.g., 22:00 to 08:00) during which push notifications will not be sent. Notifications are still created and stored, but FCM push is suppressed.
+
 ## Database Schema
 
 ### Users Table
@@ -386,6 +582,59 @@ Content-Type: application/json
 | expires_at | TIMESTAMP | Expiration time |
 | created_at | TIMESTAMP | Token creation time |
 | is_revoked | BOOLEAN | Revocation status |
+
+### DeviceTokens Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | INTEGER | Foreign key to Users |
+| platform | VARCHAR(50) | Platform (android/ios/web) |
+| token | VARCHAR(500) | FCM device token (unique) |
+| active | BOOLEAN | Token active status |
+| created_at | TIMESTAMP | Token creation time |
+| last_used_at | TIMESTAMP | Last usage time |
+
+### NotificationPreferences Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | INTEGER | Foreign key to Users (unique) |
+| messages_enabled | BOOLEAN | Message notifications |
+| matches_enabled | BOOLEAN | Match notifications |
+| groups_enabled | BOOLEAN | Group notifications |
+| class_reminders_enabled | BOOLEAN | Class reminder notifications |
+| social_enabled | BOOLEAN | Social notifications |
+| email_fallback | BOOLEAN | Email fallback enabled |
+| quiet_hours_start | TIME | Quiet hours start (nullable) |
+| quiet_hours_end | TIME | Quiet hours end (nullable) |
+| updated_at | TIMESTAMP | Last update time |
+
+### Notifications Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | INTEGER | Foreign key to Users |
+| type | VARCHAR(50) | Notification type |
+| title | VARCHAR(255) | Notification title |
+| body | TEXT | Notification body |
+| data | JSONB | Additional payload data |
+| priority | VARCHAR(50) | Priority level |
+| read | BOOLEAN | Read status |
+| clicked | BOOLEAN | Clicked status |
+| sent_at | TIMESTAMP | Sent time |
+| delivered_at | TIMESTAMP | Delivery time (nullable) |
+| read_at | TIMESTAMP | Read time (nullable) |
+| created_at | TIMESTAMP | Creation time |
+
+### NotificationDeliveryLog Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| notification_id | UUID | Foreign key to Notifications |
+| device_token_id | UUID | Foreign key to DeviceTokens |
+| status | VARCHAR(50) | Delivery status |
+| error_message | TEXT | Error details (nullable) |
+| attempted_at | TIMESTAMP | Attempt time |
 
 ## Project Structure
 

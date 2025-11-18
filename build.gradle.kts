@@ -60,6 +60,9 @@ dependencies {
     // Password Hashing
     implementation("org.mindrot:jbcrypt:0.4")
 
+    // Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-admin:9.2.0")
+
     // Logging
     implementation("ch.qos.logback:logback-classic:$logback_version")
 
