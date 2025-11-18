@@ -9,9 +9,25 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    // Core infrastructure
     configureKoin()
     configureDatabase()
+
+    // Monitoring and logging (early in pipeline)
+    configureMonitoring()
+
+    // Serialization
     configureSerialization()
+
+    // Error handling (before routes)
+    configureErrorHandling()
+
+    // Security
     configureSecurity()
+
+    // Health checks
+    configureHealth()
+
+    // Routes (last)
     configureRouting()
 }

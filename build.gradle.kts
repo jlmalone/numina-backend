@@ -7,9 +7,9 @@ val postgres_version: String by project
 val h2_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("io.ktor.plugin") version "3.0.1"
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("jvm") version "1.9.22"
+    id("io.ktor.plugin") version "2.3.7"
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 group = "com.numina"

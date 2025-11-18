@@ -1,12 +1,13 @@
 package com.numina.routes
 
-import com.numina.data.repositories.ClassRepository
 import com.numina.domain.ClassFilters
 import com.numina.domain.CreateClassRequest
 import com.numina.domain.UpdateClassRequest
+import com.numina.services.ClassService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -14,7 +15,7 @@ import kotlinx.datetime.Instant
 import org.koin.ktor.ext.inject
 
 fun Route.classRoutes() {
-    val classRepository by inject<ClassRepository>()
+    val classService by inject<ClassService>()
 
     route("/classes") {
         // Public endpoints - anyone can view classes
@@ -33,80 +34,52 @@ fun Route.classRoutes() {
                 tags = call.request.queryParameters.getAll("tags")
             )
 
-            val classes = classRepository.getClasses(filters)
-            call.respond(classes)
+            // Pagination parameters
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+
+            val paginatedClasses = classService.getClasses(filters, page, pageSize)
+            call.respond(HttpStatusCode.OK, paginatedClasses)
         }
 
         get("/{id}") {
             val classId = call.parameters["id"]?.toIntOrNull()
-            if (classId == null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid class ID"))
-                return@get
-            }
+                ?: throw IllegalArgumentException("Invalid class ID")
 
-            val fitnessClass = classRepository.getClassById(classId)
-            if (fitnessClass == null) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Class not found"))
-                return@get
-            }
-
-            call.respond(fitnessClass)
+            val fitnessClass = classService.getClassById(classId)
+            call.respond(HttpStatusCode.OK, fitnessClass)
         }
 
         // Admin endpoints - require authentication
         authenticate("auth-jwt") {
             post {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
                 val request = call.receive<CreateClassRequest>()
 
-                // Validate intensity
-                if (request.intensity < 1 || request.intensity > 10) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Intensity must be between 1 and 10"))
-                    return@post
-                }
-
-                // Validate capacity
-                if (request.capacity < 1) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Capacity must be at least 1"))
-                    return@post
-                }
-
-                val fitnessClass = classRepository.createClass(request)
-                if (fitnessClass == null) {
-                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to create class"))
-                    return@post
-                }
-
+                val fitnessClass = classService.createClass(request, userId)
                 call.respond(HttpStatusCode.Created, fitnessClass)
             }
 
             put("/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
                 val classId = call.parameters["id"]?.toIntOrNull()
-                if (classId == null) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid class ID"))
-                    return@put
-                }
-
+                    ?: throw IllegalArgumentException("Invalid class ID")
                 val request = call.receive<UpdateClassRequest>()
 
-                // Validate intensity if provided
-                if (request.intensity != null && (request.intensity < 1 || request.intensity > 10)) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Intensity must be between 1 and 10"))
-                    return@put
-                }
+                val updatedClass = classService.updateClass(classId, request, userId)
+                call.respond(HttpStatusCode.OK, updatedClass)
+            }
 
-                // Validate capacity if provided
-                if (request.capacity != null && request.capacity < 1) {
-                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Capacity must be at least 1"))
-                    return@put
-                }
+            delete("/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asInt()
+                val classId = call.parameters["id"]?.toIntOrNull()
+                    ?: throw IllegalArgumentException("Invalid class ID")
 
-                val updatedClass = classRepository.updateClass(classId, request)
-                if (updatedClass == null) {
-                    call.respond(HttpStatusCode.NotFound, mapOf("error" to "Class not found"))
-                    return@put
-                }
-
-                call.respond(updatedClass)
+                classService.deleteClass(classId, userId)
+                call.respond(HttpStatusCode.OK, mapOf("message" to "Class deleted successfully"))
             }
         }
     }
