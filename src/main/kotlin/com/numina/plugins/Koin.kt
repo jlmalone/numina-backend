@@ -17,9 +17,8 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
-    single<FollowRepository> { FollowRepositoryImpl() }
-    single<ActivityFeedRepository> { ActivityFeedRepositoryImpl() }
-    single<UserStatsRepository> { UserStatsRepositoryImpl() }
+    single<ReviewRepository> { ReviewRepositoryImpl() }
+    single<RatingAggregateRepository> { RatingAggregateRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -39,17 +38,16 @@ val appModule = module {
             classRepository = get()
         )
     }
-    single<SocialService> {
-        SocialServiceImpl(
-            followRepository = get(),
-            userProfileRepository = get(),
-            userStatsRepository = get()
+    single<RatingAggregationService> {
+        RatingAggregationServiceImpl(
+            ratingAggregateRepository = get(),
+            reviewRepository = get()
         )
     }
-    single<ActivityFeedService> {
-        ActivityFeedServiceImpl(
-            activityFeedRepository = get(),
-            userStatsRepository = get()
+    single<ReviewService> {
+        ReviewServiceImpl(
+            reviewRepository = get(),
+            ratingAggregationService = get()
         )
     }
 }

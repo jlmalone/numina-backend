@@ -30,6 +30,16 @@ fun Application.configureDatabase() {
     }
 
     transaction(database) {
-        SchemaUtils.create(Users, UserProfiles, Classes, RefreshTokens, Follows, ActivityFeed, ActivityLikes, ActivityComments, UserStats)
+        SchemaUtils.create(
+            Users,
+            UserProfiles,
+            Classes,
+            RefreshTokens,
+            Reviews,
+            ReviewPhotos,
+            ReviewVotes,
+            ReviewReports,
+            RatingAggregates
+        )
     }
 }
