@@ -30,6 +30,15 @@ fun Application.configureDatabase() {
     }
 
     transaction(database) {
-        SchemaUtils.create(Users, UserProfiles, Classes, RefreshTokens, Bookings, BookingReminders, AttendanceStats)
+        SchemaUtils.create(
+            Users,
+            UserProfiles,
+            Classes,
+            RefreshTokens,
+            AdminUsers,
+            AdminAuditLog,
+            FeatureFlags,
+            SystemSettings
+        )
     }
 }

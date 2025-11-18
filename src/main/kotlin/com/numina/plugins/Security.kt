@@ -1,5 +1,6 @@
 package com.numina.plugins
 
+import com.numina.auth.AdminJwtConfig
 import com.numina.auth.JwtConfig
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -33,6 +34,22 @@ fun Application.configureSecurity() {
             }
             challenge { _, _ ->
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Token is not valid or has expired"))
+            }
+        }
+
+        jwt("admin-jwt") {
+            verifier(AdminJwtConfig.verifier)
+            validate { credential ->
+                val isAdmin = credential.payload.getClaim("isAdmin").asBoolean()
+                val userId = credential.payload.getClaim("userId").asInt()
+                if (isAdmin == true && userId != null) {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+            challenge { _, _ ->
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Admin authentication required"))
             }
         }
     }

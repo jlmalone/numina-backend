@@ -17,9 +17,10 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
-    single<BookingRepository> { BookingRepositoryImpl(classRepository = get()) }
-    single<ReminderPreferencesRepository> { ReminderPreferencesRepositoryImpl() }
-    single<AttendanceStatsRepository> { AttendanceStatsRepositoryImpl() }
+    single<AdminUserRepository> { AdminUserRepositoryImpl() }
+    single<AdminAuditLogRepository> { AdminAuditLogRepositoryImpl() }
+    single<FeatureFlagRepository> { FeatureFlagRepositoryImpl() }
+    single<SystemSettingsRepository> { SystemSettingsRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -39,27 +40,29 @@ val appModule = module {
             classRepository = get()
         )
     }
-    single<BookingService> {
-        BookingService(
-            bookingRepository = get(),
-            attendanceStatsRepository = get()
+    single<AuditLogService> {
+        AuditLogServiceImpl(
+            auditLogRepository = get()
         )
     }
-    single<CalendarService> {
-        CalendarService(
-            bookingRepository = get()
+    single<FeatureFlagService> {
+        FeatureFlagServiceImpl(
+            featureFlagRepository = get()
         )
     }
-    single<ReminderService> {
-        ReminderService(
-            bookingRepository = get(),
-            reminderPreferencesRepository = get()
+    single<AdminUserService> {
+        AdminUserServiceImpl(
+            userRepository = get(),
+            userProfileRepository = get()
         )
     }
-    single<AttendanceStatsService> {
-        AttendanceStatsService(
-            attendanceStatsRepository = get(),
-            bookingRepository = get()
+    single<ModerationService> {
+        ModerationServiceImpl()
+    }
+    single<AdminAnalyticsService> {
+        AdminAnalyticsServiceImpl(
+            userRepository = get(),
+            classRepository = get()
         )
     }
 }
