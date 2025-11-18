@@ -1,6 +1,7 @@
 package com.numina.plugins
 
 import com.numina.routes.authRoutes
+import com.numina.routes.bookingRoutes
 import com.numina.routes.classRoutes
 import com.numina.routes.reviewRoutes
 import com.numina.routes.userRoutes
@@ -23,7 +24,7 @@ fun Application.configureRouting() {
             authRoutes()
             userRoutes()
             classRoutes()
-            reviewRoutes()
+            bookingRoutes()
         }
 
         // Notification routes are at /api/v1/notifications and /api/v1/admin/notifications

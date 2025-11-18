@@ -17,8 +17,9 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
-    single<ReviewRepository> { ReviewRepositoryImpl() }
-    single<RatingAggregateRepository> { RatingAggregateRepositoryImpl() }
+    single<BookingRepository> { BookingRepositoryImpl(classRepository = get()) }
+    single<ReminderPreferencesRepository> { ReminderPreferencesRepositoryImpl() }
+    single<AttendanceStatsRepository> { AttendanceStatsRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -38,16 +39,27 @@ val appModule = module {
             classRepository = get()
         )
     }
-    single<RatingAggregationService> {
-        RatingAggregationServiceImpl(
-            ratingAggregateRepository = get(),
-            reviewRepository = get()
+    single<BookingService> {
+        BookingService(
+            bookingRepository = get(),
+            attendanceStatsRepository = get()
         )
     }
-    single<ReviewService> {
-        ReviewServiceImpl(
-            reviewRepository = get(),
-            ratingAggregationService = get()
+    single<CalendarService> {
+        CalendarService(
+            bookingRepository = get()
+        )
+    }
+    single<ReminderService> {
+        ReminderService(
+            bookingRepository = get(),
+            reminderPreferencesRepository = get()
+        )
+    }
+    single<AttendanceStatsService> {
+        AttendanceStatsService(
+            attendanceStatsRepository = get(),
+            bookingRepository = get()
         )
     }
 }
