@@ -14,6 +14,13 @@ interface UserRepository {
     suspend fun getUserById(id: Int): User?
     suspend fun getUserByEmail(email: String): User?
     suspend fun verifyPassword(email: String, password: String): User?
+    suspend fun getAllUsers(limit: Int = 100, offset: Int = 0): List<User>
+    suspend fun searchUsers(query: String, limit: Int = 100): List<User>
+    suspend fun suspendUser(id: Int, reason: String): Boolean
+    suspend fun unsuspendUser(id: Int): Boolean
+    suspend fun resetPassword(id: Int, newPassword: String): Boolean
+    suspend fun getUserCount(): Int
+    suspend fun isSuspended(id: Int): Boolean
 }
 
 class UserRepositoryImpl : UserRepository {
@@ -64,5 +71,53 @@ class UserRepositoryImpl : UserRepository {
         } else {
             null
         }
+    }
+
+    override suspend fun getAllUsers(limit: Int, offset: Int): List<User> = transaction {
+        Users.selectAll()
+            .limit(limit, offset.toLong())
+            .orderBy(Users.createdAt to SortOrder.DESC)
+            .map { resultRowToUser(it) }
+    }
+
+    override suspend fun searchUsers(query: String, limit: Int): List<User> = transaction {
+        Users.select { Users.email like "%$query%" }
+            .limit(limit)
+            .orderBy(Users.createdAt to SortOrder.DESC)
+            .map { resultRowToUser(it) }
+    }
+
+    override suspend fun suspendUser(id: Int, reason: String): Boolean = transaction {
+        Users.update({ Users.id eq id }) {
+            it[isSuspended] = true
+            it[suspensionReason] = reason
+            it[updatedAt] = Clock.System.now()
+        } > 0
+    }
+
+    override suspend fun unsuspendUser(id: Int): Boolean = transaction {
+        Users.update({ Users.id eq id }) {
+            it[isSuspended] = false
+            it[suspensionReason] = null
+            it[updatedAt] = Clock.System.now()
+        } > 0
+    }
+
+    override suspend fun resetPassword(id: Int, newPassword: String): Boolean = transaction {
+        val hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt())
+        Users.update({ Users.id eq id }) {
+            it[passwordHash] = hashedPassword
+            it[updatedAt] = Clock.System.now()
+        } > 0
+    }
+
+    override suspend fun getUserCount(): Int = transaction {
+        Users.selectAll().count().toInt()
+    }
+
+    override suspend fun isSuspended(id: Int): Boolean = transaction {
+        Users.select { Users.id eq id }
+            .singleOrNull()
+            ?.get(Users.isSuspended) ?: false
     }
 }

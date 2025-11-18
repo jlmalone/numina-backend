@@ -13,6 +13,10 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
+    single<AdminUserRepository> { AdminUserRepositoryImpl() }
+    single<AdminAuditLogRepository> { AdminAuditLogRepositoryImpl() }
+    single<FeatureFlagRepository> { FeatureFlagRepositoryImpl() }
+    single<SystemSettingsRepository> { SystemSettingsRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -29,6 +33,31 @@ val appModule = module {
     }
     single<ClassService> {
         ClassServiceImpl(
+            classRepository = get()
+        )
+    }
+    single<AuditLogService> {
+        AuditLogServiceImpl(
+            auditLogRepository = get()
+        )
+    }
+    single<FeatureFlagService> {
+        FeatureFlagServiceImpl(
+            featureFlagRepository = get()
+        )
+    }
+    single<AdminUserService> {
+        AdminUserServiceImpl(
+            userRepository = get(),
+            userProfileRepository = get()
+        )
+    }
+    single<ModerationService> {
+        ModerationServiceImpl()
+    }
+    single<AdminAnalyticsService> {
+        AdminAnalyticsServiceImpl(
+            userRepository = get(),
             classRepository = get()
         )
     }

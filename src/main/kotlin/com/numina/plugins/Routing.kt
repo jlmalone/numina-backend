@@ -1,5 +1,6 @@
 package com.numina.plugins
 
+import com.numina.routes.adminRoutes
 import com.numina.routes.authRoutes
 import com.numina.routes.classRoutes
 import com.numina.routes.userRoutes
@@ -21,6 +22,7 @@ fun Application.configureRouting() {
             authRoutes()
             userRoutes()
             classRoutes()
+            adminRoutes()
         }
     }
 }
