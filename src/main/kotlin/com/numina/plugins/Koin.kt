@@ -5,6 +5,7 @@ import com.numina.messaging.MessagingService
 import com.numina.messaging.MessagingServiceImpl
 import com.numina.messaging.WebSocketManager
 import com.numina.services.*
+import com.numina.services.groups.*
 import io.ktor.server.application.*
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
@@ -16,6 +17,9 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
+    single<GroupRepository> { GroupRepositoryImpl() }
+    single<GroupMemberRepository> { GroupMemberRepositoryImpl() }
+    single<GroupActivityRepository> { GroupActivityRepositoryImpl() }
 
     // Messaging Repositories
     single<MessageRepository> { MessageRepositoryImpl() }
@@ -41,20 +45,18 @@ val appModule = module {
             classRepository = get()
         )
     }
-
-    // Messaging Service
-    single<MessagingService> {
-        MessagingServiceImpl(
-            messageRepository = get(),
-            conversationRepository = get(),
-            blockedUserRepository = get(),
-            messageReportRepository = get(),
-            userRepository = get()
+    single<GroupService> {
+        GroupServiceImpl(
+            groupRepository = get(),
+            memberRepository = get()
         )
     }
-
-    // WebSocket Manager (singleton)
-    single { WebSocketManager() }
+    single<GroupActivityService> {
+        GroupActivityServiceImpl(
+            activityRepository = get(),
+            memberRepository = get()
+        )
+    }
 }
 
 fun Application.configureKoin() {

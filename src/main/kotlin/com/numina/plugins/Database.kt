@@ -35,10 +35,11 @@ fun Application.configureDatabase() {
             UserProfiles,
             Classes,
             RefreshTokens,
-            Messages,
-            Conversations,
-            BlockedUsers,
-            MessageReports
+            Groups,
+            GroupMembers,
+            GroupActivities,
+            ActivityRSVPs,
+            GroupInvites
         )
     }
 }
