@@ -23,6 +23,9 @@ fun Application.module() {
     // Monitoring and logging (early in pipeline)
     configureMonitoring()
 
+    // Performance optimizations (compression, caching, rate limiting)
+    configurePerformance()
+
     // Serialization
     configureSerialization()
 

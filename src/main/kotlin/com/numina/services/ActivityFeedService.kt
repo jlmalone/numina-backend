@@ -19,6 +19,7 @@ interface ActivityFeedService {
     suspend fun getLikes(activityId: String, limit: Int = 50, offset: Int = 0): PaginatedResponse<ActivityLike>
     suspend fun addComment(activityId: String, userId: Int, content: String): ActivityComment
     suspend fun getComments(activityId: String, limit: Int = 50, offset: Int = 0): PaginatedResponse<ActivityComment>
+    suspend fun regenerateFeedCache()
 }
 
 class ActivityFeedServiceImpl(
@@ -291,6 +292,16 @@ class ActivityFeedServiceImpl(
             offset = offset,
             hasMore = offset + comments.size < total
         )
+    }
+
+    override suspend fun regenerateFeedCache() {
+        logger.info("Regenerating feed cache...")
+        // In a production system, this would:
+        // 1. Pre-generate feeds for active users
+        // 2. Cache them in Redis
+        // 3. Invalidate old cache entries
+        // For now, this is a placeholder for the background job
+        logger.info("Feed cache regeneration completed")
     }
 }
 

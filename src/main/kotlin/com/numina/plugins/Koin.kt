@@ -23,6 +23,7 @@ val appModule = module {
     single<SystemSettingsRepository> { SystemSettingsRepositoryImpl() }
 
     // Services
+    single<CacheService> { CacheService() }
     single<AuthService> {
         AuthServiceImpl(
             userRepository = get(),

@@ -41,6 +41,8 @@ interface NotificationService {
     suspend fun getNotificationHistory(userId: Int, page: Int, pageSize: Int): NotificationHistoryResponse
     suspend fun markNotificationAsRead(notificationId: String, userId: Int): Boolean
     suspend fun deleteNotification(notificationId: String, userId: Int): Boolean
+
+    suspend fun processBatchNotifications()
 }
 
 class NotificationServiceImpl(
@@ -242,5 +244,16 @@ class NotificationServiceImpl(
             logger.error("Error parsing quiet hours", e)
             return false
         }
+    }
+
+    override suspend fun processBatchNotifications() {
+        // Process pending notifications in batches for efficiency
+        logger.info("Processing batch notifications...")
+        // In a production system, this would:
+        // 1. Query for pending notifications from a queue
+        // 2. Group them by user/device
+        // 3. Send them in batches to FCM
+        // For now, this is a placeholder for the background job
+        logger.info("Batch notification processing completed")
     }
 }

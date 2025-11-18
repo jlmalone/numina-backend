@@ -42,6 +42,9 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-request-validation:$ktor_version")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-compression:$ktor_version")
+    implementation("io.ktor:ktor-server-caching-headers:$ktor_version")
+    implementation("io.ktor:ktor-server-rate-limit:$ktor_version")
 
     // Coroutines for async operations
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -60,12 +63,19 @@ dependencies {
     // Database Drivers
     implementation("org.postgresql:postgresql:$postgres_version")
     implementation("com.h2database:h2:$h2_version")
+    implementation("com.zaxxer:HikariCP:5.1.0")
 
     // Password Hashing
     implementation("org.mindrot:jbcrypt:0.4")
 
     // Firebase Cloud Messaging
     implementation("com.google.firebase:firebase-admin:9.2.0")
+
+    // Redis for caching
+    implementation("io.lettuce:lettuce-core:6.3.0.RELEASE")
+
+    // Prometheus metrics
+    implementation("io.micrometer:micrometer-registry-prometheus:1.12.0")
 
     // Logging
     implementation("ch.qos.logback:logback-classic:$logback_version")

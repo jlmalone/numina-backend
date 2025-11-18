@@ -8,6 +8,6 @@ object Users : IntIdTable("users") {
     val passwordHash = varchar("password_hash", 255)
     val isSuspended = bool("is_suspended").default(false)
     val suspensionReason = varchar("suspension_reason", 500).nullable()
-    val createdAt = timestamp("created_at")
+    val createdAt = timestamp("created_at").index()
     val updatedAt = timestamp("updated_at")
 }

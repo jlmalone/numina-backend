@@ -26,6 +26,10 @@ object Reviews : IntIdTable("reviews") {
     init {
         // Unique constraint: one review per user per class
         uniqueIndex(userId, classId)
+        index(false, userId)
+        index(false, classId)
+        index(false, createdAt)
+        index(false, status)
     }
 }
 
