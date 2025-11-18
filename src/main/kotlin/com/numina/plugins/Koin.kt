@@ -13,6 +13,8 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
+    single<ReviewRepository> { ReviewRepositoryImpl() }
+    single<RatingAggregateRepository> { RatingAggregateRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -30,6 +32,18 @@ val appModule = module {
     single<ClassService> {
         ClassServiceImpl(
             classRepository = get()
+        )
+    }
+    single<RatingAggregationService> {
+        RatingAggregationServiceImpl(
+            ratingAggregateRepository = get(),
+            reviewRepository = get()
+        )
+    }
+    single<ReviewService> {
+        ReviewServiceImpl(
+            reviewRepository = get(),
+            ratingAggregationService = get()
         )
     }
 }
