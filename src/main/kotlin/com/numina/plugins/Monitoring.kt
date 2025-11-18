@@ -115,10 +115,27 @@ fun Application.configureMonitoring() {
     JvmThreadMetrics().bindTo(appMicrometerRegistry)
     ProcessorMetrics().bindTo(appMicrometerRegistry)
 
-    // Expose Prometheus metrics endpoint
+    // Expose Prometheus metrics endpoint and health checks
     routing {
         get("/metrics") {
             call.respond(appMicrometerRegistry.scrape())
+        }
+
+        get("/health") {
+            call.respond(HttpStatusCode.OK, mapOf(
+                "status" to "healthy",
+                "timestamp" to System.currentTimeMillis()
+            ))
+        }
+
+        get("/ready") {
+            // Check database, redis, etc.
+            val isReady = true // Simplified for now - can add actual checks
+            if (isReady) {
+                call.respond(HttpStatusCode.OK, mapOf("status" to "ready"))
+            } else {
+                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("status" to "not ready"))
+            }
         }
     }
 
