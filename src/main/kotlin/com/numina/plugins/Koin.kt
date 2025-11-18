@@ -1,6 +1,9 @@
 package com.numina.plugins
 
 import com.numina.data.repositories.*
+import com.numina.messaging.MessagingService
+import com.numina.messaging.MessagingServiceImpl
+import com.numina.messaging.WebSocketManager
 import com.numina.services.*
 import io.ktor.server.application.*
 import org.koin.dsl.module
@@ -13,9 +16,12 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
-    single<MatchActionRepository> { MatchActionRepositoryImpl() }
-    single<MutualMatchRepository> { MutualMatchRepositoryImpl() }
-    single<MatchPreferencesRepository> { MatchPreferencesRepositoryImpl() }
+
+    // Messaging Repositories
+    single<MessageRepository> { MessageRepositoryImpl() }
+    single<ConversationRepository> { ConversationRepositoryImpl(userRepository = get()) }
+    single<BlockedUserRepository> { BlockedUserRepositoryImpl() }
+    single<MessageReportRepository> { MessageReportRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -35,32 +41,20 @@ val appModule = module {
             classRepository = get()
         )
     }
-    single<ScoreCalculator> { ScoreCalculatorImpl() }
-    single<UserMatcher> {
-        UserMatcherImpl(
-            userProfileRepository = get(),
-            matchActionRepository = get(),
-            scoreCalculator = get()
+
+    // Messaging Service
+    single<MessagingService> {
+        MessagingServiceImpl(
+            messageRepository = get(),
+            conversationRepository = get(),
+            blockedUserRepository = get(),
+            messageReportRepository = get(),
+            userRepository = get()
         )
     }
-    single<ClassMatcher> {
-        ClassMatcherImpl(
-            userProfileRepository = get(),
-            classRepository = get(),
-            matchPreferencesRepository = get(),
-            scoreCalculator = get()
-        )
-    }
-    single<MatchingService> {
-        MatchingServiceImpl(
-            userMatcher = get(),
-            classMatcher = get(),
-            matchActionRepository = get(),
-            mutualMatchRepository = get(),
-            userProfileRepository = get(),
-            scoreCalculator = get()
-        )
-    }
+
+    // WebSocket Manager (singleton)
+    single { WebSocketManager() }
 }
 
 fun Application.configureKoin() {

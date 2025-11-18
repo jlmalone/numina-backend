@@ -35,9 +35,10 @@ fun Application.configureDatabase() {
             UserProfiles,
             Classes,
             RefreshTokens,
-            MatchActions,
-            MutualMatches,
-            MatchPreferences
+            Messages,
+            Conversations,
+            BlockedUsers,
+            MessageReports
         )
     }
 }

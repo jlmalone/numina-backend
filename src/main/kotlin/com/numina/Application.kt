@@ -25,6 +25,9 @@ fun Application.module() {
     // Security
     configureSecurity()
 
+    // WebSockets for real-time messaging
+    configureWebSockets()
+
     // Health checks
     configureHealth()
 
