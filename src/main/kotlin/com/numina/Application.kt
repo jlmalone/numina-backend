@@ -30,4 +30,7 @@ fun Application.module() {
 
     // Routes (last)
     configureRouting()
+
+    // Background jobs
+    configureBackgroundJobs()
 }
