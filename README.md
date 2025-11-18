@@ -10,6 +10,7 @@ This backend provides:
 
 - User authentication and profile management
 - Fitness class catalog and discovery
+- Groups and workout coordination system
 - User matching algorithms (coming soon)
 - Messaging and coordination features (coming soon)
 - Ratings and feedback system (coming soon)
@@ -334,6 +335,312 @@ Content-Type: application/json
 # Response: 200 OK (returns updated class)
 ```
 
+### Groups & Coordination Endpoints
+
+#### List/Search Groups (Public)
+
+```bash
+GET /api/v1/groups
+
+# Optional query parameters:
+# - category: Filter by category (RUNNING, YOGA, HIIT, etc.)
+# - isPrivate: Filter by privacy (true/false)
+# - location: Location text filter
+# - lat, long, radius: Location-based filtering (km)
+# - minMembers, maxMembers: Member count range
+# - search: Search in name and description
+# - page, pageSize: Pagination
+
+# Response: 200 OK (paginated)
+{
+  "items": [
+    {
+      "id": "uuid",
+      "name": "Morning Runners NYC",
+      "description": "Daily morning runs in Central Park",
+      "photoUrl": "https://...",
+      "category": "RUNNING",
+      "isPrivate": false,
+      "maxMembers": 50,
+      "ownerId": 1,
+      "location": "New York, NY",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "memberCount": 25,
+      "createdAt": "2025-01-15T10:00:00Z",
+      "updatedAt": "2025-01-15T10:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### Discover Groups (Public Groups Only)
+
+```bash
+GET /api/v1/groups/discover
+# Same query parameters as /groups
+# Returns only public groups
+```
+
+#### Get Group by ID
+
+```bash
+GET /api/v1/groups/{id}
+
+# Response: 200 OK (single group)
+```
+
+#### Create Group (Requires Auth)
+
+```bash
+POST /api/v1/groups
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Yoga Enthusiasts",
+  "description": "Weekly yoga sessions for all levels",
+  "photoUrl": "https://...",
+  "category": "YOGA",
+  "isPrivate": false,
+  "maxMembers": 30,
+  "location": "Brooklyn, NY",
+  "latitude": 40.6782,
+  "longitude": -73.9442
+}
+
+# Response: 201 Created
+```
+
+#### Update Group (Owner/Admin Only)
+
+```bash
+PUT /api/v1/groups/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "description": "Updated description",
+  "maxMembers": 40
+}
+
+# Response: 200 OK
+```
+
+#### Delete Group (Owner Only)
+
+```bash
+DELETE /api/v1/groups/{id}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Get My Groups
+
+```bash
+GET /api/v1/groups/my-groups
+Authorization: Bearer <token>
+
+# Response: 200 OK (list of user's groups)
+```
+
+#### Get Group Members
+
+```bash
+GET /api/v1/groups/{id}/members
+Authorization: Bearer <token>
+
+# Response: 200 OK
+[
+  {
+    "id": "member-uuid",
+    "groupId": "group-uuid",
+    "userId": 1,
+    "userEmail": "user@example.com",
+    "userName": "John Doe",
+    "role": "OWNER",
+    "status": "ACTIVE",
+    "joinedAt": "2025-01-15T10:00:00Z"
+  }
+]
+```
+
+#### Join Group
+
+```bash
+POST /api/v1/groups/{id}/join
+Authorization: Bearer <token>
+
+# For public groups: instant join
+# For private groups: creates pending request
+
+# Response: 200 OK
+```
+
+#### Leave Group
+
+```bash
+POST /api/v1/groups/{id}/leave
+Authorization: Bearer <token>
+
+# Response: 200 OK
+# Note: Owner cannot leave (must delete group or transfer ownership)
+```
+
+#### Invite User to Group
+
+```bash
+POST /api/v1/groups/{id}/invite
+Authorization: Bearer <token>
+Content-Type: application/json
+
+# Direct invite to user:
+{
+  "userId": 5
+}
+
+# Or generate invite link:
+{
+  "generateLink": true
+}
+
+# Response for link: 201 Created
+{
+  "inviteCode": "abc123...",
+  "expiresAt": "2025-01-22T10:00:00Z"
+}
+```
+
+#### Remove Member (Admin/Owner Only)
+
+```bash
+DELETE /api/v1/groups/{id}/kick/{userId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Get Pending Join Requests (Admin/Owner Only)
+
+```bash
+GET /api/v1/groups/{id}/requests
+Authorization: Bearer <token>
+
+# Response: 200 OK (list of pending members)
+```
+
+#### Approve Join Request (Admin/Owner Only)
+
+```bash
+POST /api/v1/groups/{id}/requests/approve/{userId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Reject Join Request (Admin/Owner Only)
+
+```bash
+POST /api/v1/groups/{id}/requests/reject/{userId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+### Group Activities Endpoints
+
+#### Create Group Activity
+
+```bash
+POST /api/v1/groups/{id}/activities
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "classId": 1,  # Optional: link to a fitness class
+  "title": "Saturday Morning Run",
+  "description": "5k run around Central Park",
+  "scheduledAt": "2025-01-20T08:00:00Z",
+  "location": "Central Park, NYC",
+  "latitude": 40.785091,
+  "longitude": -73.968285,
+  "isRecurring": true,
+  "recurrenceRule": "WEEKLY"
+}
+
+# Response: 201 Created
+```
+
+#### Get Group Activities
+
+```bash
+GET /api/v1/groups/{id}/activities
+Authorization: Bearer <token>
+
+# Optional query parameter:
+# - upcoming=true: Only show future activities
+
+# Response: 200 OK (list of activities with RSVP stats)
+```
+
+#### Get Activity Details
+
+```bash
+GET /api/v1/groups/{id}/activities/{activityId}
+Authorization: Bearer <token>
+
+# Response: 200 OK (single activity)
+```
+
+#### Update Activity (Creator/Admin Only)
+
+```bash
+PUT /api/v1/groups/{id}/activities/{activityId}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "title": "Updated title",
+  "scheduledAt": "2025-01-20T09:00:00Z"
+}
+
+# Response: 200 OK
+```
+
+#### Cancel Activity (Creator/Admin Only)
+
+```bash
+DELETE /api/v1/groups/{id}/activities/{activityId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### RSVP to Activity
+
+```bash
+POST /api/v1/groups/{id}/activities/{activityId}/rsvp
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "GOING"  # or "MAYBE" or "NOT_GOING"
+}
+
+# Response: 200 OK
+```
+
+#### Get Activity RSVPs
+
+```bash
+GET /api/v1/groups/{id}/activities/{activityId}/rsvps
+Authorization: Bearer <token>
+
+# Response: 200 OK (list of RSVPs)
+```
+
 ## Database Schema
 
 ### Users Table
@@ -387,6 +694,73 @@ Content-Type: application/json
 | created_at | TIMESTAMP | Token creation time |
 | is_revoked | BOOLEAN | Revocation status |
 
+### Groups Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | Primary key (UUID) |
+| name | VARCHAR(255) | Group name |
+| description | TEXT | Group description |
+| photo_url | VARCHAR(512) | Group photo URL |
+| category | VARCHAR(50) | Group category |
+| is_private | BOOLEAN | Private group flag |
+| max_members | INTEGER | Maximum members |
+| owner_id | INTEGER | Foreign key to Users |
+| location | VARCHAR(255) | Location text |
+| latitude | DECIMAL(10,8) | Latitude |
+| longitude | DECIMAL(11,8) | Longitude |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update time |
+
+### GroupMembers Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | Primary key (UUID) |
+| group_id | VARCHAR(36) | Foreign key to Groups |
+| user_id | INTEGER | Foreign key to Users |
+| role | VARCHAR(20) | OWNER, ADMIN, MEMBER |
+| status | VARCHAR(20) | ACTIVE, PENDING, REMOVED |
+| joined_at | TIMESTAMP | Join time |
+
+### GroupActivities Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | Primary key (UUID) |
+| group_id | VARCHAR(36) | Foreign key to Groups |
+| class_id | INTEGER | Foreign key to Classes (nullable) |
+| title | VARCHAR(255) | Activity title |
+| description | TEXT | Activity description |
+| scheduled_at | TIMESTAMP | Scheduled time |
+| location | VARCHAR(255) | Location text |
+| latitude | DECIMAL(10,8) | Latitude |
+| longitude | DECIMAL(11,8) | Longitude |
+| is_recurring | BOOLEAN | Recurring flag |
+| recurrence_rule | VARCHAR(255) | Recurrence pattern |
+| created_by_id | INTEGER | Foreign key to Users |
+| created_at | TIMESTAMP | Creation time |
+| cancelled | BOOLEAN | Cancellation flag |
+
+### ActivityRSVPs Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | Primary key (UUID) |
+| activity_id | VARCHAR(36) | Foreign key to GroupActivities |
+| user_id | INTEGER | Foreign key to Users |
+| status | VARCHAR(20) | GOING, MAYBE, NOT_GOING |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update time |
+
+### GroupInvites Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | VARCHAR(36) | Primary key (UUID) |
+| group_id | VARCHAR(36) | Foreign key to Groups |
+| inviter_id | INTEGER | Foreign key to Users |
+| invitee_id | INTEGER | Foreign key to Users (nullable) |
+| invite_code | VARCHAR(64) | Invite code (nullable, unique) |
+| status | VARCHAR(20) | PENDING, ACCEPTED, DECLINED, EXPIRED |
+| created_at | TIMESTAMP | Creation time |
+| expires_at | TIMESTAMP | Expiration time |
+
 ## Project Structure
 
 ```
@@ -402,14 +776,32 @@ numina-backend/
 │   ├── domain/                 # Domain models
 │   │   ├── User.kt
 │   │   ├── UserProfile.kt
-│   │   └── FitnessClass.kt
+│   │   ├── FitnessClass.kt
+│   │   └── groups/             # Groups domain models
+│   │       └── Group.kt
 │   ├── data/                   # Database layer
 │   │   ├── tables/             # Exposed table definitions
+│   │   │   ├── Users.kt
+│   │   │   ├── Classes.kt
+│   │   │   └── Groups.kt       # Groups tables
 │   │   └── repositories/       # Data access repositories
+│   │       ├── UserRepository.kt
+│   │       ├── ClassRepository.kt
+│   │       ├── GroupRepository.kt
+│   │       ├── GroupMemberRepository.kt
+│   │       └── GroupActivityRepository.kt
+│   ├── services/               # Business logic
+│   │   ├── AuthService.kt
+│   │   ├── UserService.kt
+│   │   ├── ClassService.kt
+│   │   └── groups/             # Groups services
+│   │       ├── GroupService.kt
+│   │       └── GroupActivityService.kt
 │   ├── routes/                 # API route handlers
 │   │   ├── AuthRoutes.kt
 │   │   ├── UserRoutes.kt
-│   │   └── ClassRoutes.kt
+│   │   ├── ClassRoutes.kt
+│   │   └── GroupRoutes.kt
 │   └── auth/                   # JWT and auth logic
 │       └── JwtConfig.kt
 ├── src/main/resources/

@@ -2,6 +2,7 @@ package com.numina.plugins
 
 import com.numina.data.repositories.*
 import com.numina.services.*
+import com.numina.services.groups.*
 import io.ktor.server.application.*
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
@@ -13,6 +14,9 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
+    single<GroupRepository> { GroupRepositoryImpl() }
+    single<GroupMemberRepository> { GroupMemberRepositoryImpl() }
+    single<GroupActivityRepository> { GroupActivityRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -30,6 +34,18 @@ val appModule = module {
     single<ClassService> {
         ClassServiceImpl(
             classRepository = get()
+        )
+    }
+    single<GroupService> {
+        GroupServiceImpl(
+            groupRepository = get(),
+            memberRepository = get()
+        )
+    }
+    single<GroupActivityService> {
+        GroupActivityServiceImpl(
+            activityRepository = get(),
+            memberRepository = get()
         )
     }
 }
