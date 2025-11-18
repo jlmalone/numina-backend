@@ -14,3 +14,9 @@ database:
   # jdbcUrl: jdbc:postgresql://localhost:5432/numina
   # user: postgres
   # password: postgres
+
+firebase:
+  # Path to Firebase service account JSON file
+  # Download from Firebase Console > Project Settings > Service Accounts
+  # Place file in src/main/resources/ (DO NOT commit to git!)
+  serviceAccountPath: null  # Example: "src/main/resources/firebase-service-account.json"

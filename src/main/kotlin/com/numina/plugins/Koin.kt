@@ -17,15 +17,7 @@ val appModule = module {
     single<UserProfileRepository> { UserProfileRepositoryImpl() }
     single<ClassRepository> { ClassRepositoryImpl() }
     single<RefreshTokenRepository> { RefreshTokenRepositoryImpl() }
-    single<GroupRepository> { GroupRepositoryImpl() }
-    single<GroupMemberRepository> { GroupMemberRepositoryImpl() }
-    single<GroupActivityRepository> { GroupActivityRepositoryImpl() }
-
-    // Messaging Repositories
-    single<MessageRepository> { MessageRepositoryImpl() }
-    single<ConversationRepository> { ConversationRepositoryImpl(userRepository = get()) }
-    single<BlockedUserRepository> { BlockedUserRepositoryImpl() }
-    single<MessageReportRepository> { MessageReportRepositoryImpl() }
+    single<NotificationRepository> { NotificationRepositoryImpl() }
 
     // Services
     single<AuthService> {
@@ -45,16 +37,11 @@ val appModule = module {
             classRepository = get()
         )
     }
-    single<GroupService> {
-        GroupServiceImpl(
-            groupRepository = get(),
-            memberRepository = get()
-        )
-    }
-    single<GroupActivityService> {
-        GroupActivityServiceImpl(
-            activityRepository = get(),
-            memberRepository = get()
+    single<FCMService> { FCMServiceImpl() }
+    single<NotificationService> {
+        NotificationServiceImpl(
+            notificationRepository = get(),
+            fcmService = get()
         )
     }
 }

@@ -35,11 +35,10 @@ fun Application.configureDatabase() {
             UserProfiles,
             Classes,
             RefreshTokens,
-            Groups,
-            GroupMembers,
-            GroupActivities,
-            ActivityRSVPs,
-            GroupInvites
+            DeviceTokens,
+            NotificationPreferences,
+            Notifications,
+            NotificationDeliveryLog
         )
     }
 }

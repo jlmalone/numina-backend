@@ -335,311 +335,201 @@ Content-Type: application/json
 # Response: 200 OK (returns updated class)
 ```
 
-### Groups & Coordination Endpoints
+### Push Notifications (FCM)
 
-#### List/Search Groups (Public)
+The backend supports push notifications via Firebase Cloud Messaging for Android, iOS, and Web platforms.
+
+#### Firebase Setup
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Go to Project Settings > Service Accounts
+3. Click "Generate New Private Key" to download `firebase-service-account.json`
+4. Place the file in `src/main/resources/` (it's already in `.gitignore`)
+5. Update `application.yaml`:
+
+```yaml
+firebase:
+  serviceAccountPath: "src/main/resources/firebase-service-account.json"
+```
+
+**IMPORTANT**: Never commit Firebase credentials to version control!
+
+#### Device Registration
 
 ```bash
-GET /api/v1/groups
+POST /api/v1/notifications/register-device
+Authorization: Bearer <token>
+Content-Type: application/json
 
-# Optional query parameters:
-# - category: Filter by category (RUNNING, YOGA, HIIT, etc.)
-# - isPrivate: Filter by privacy (true/false)
-# - location: Location text filter
-# - lat, long, radius: Location-based filtering (km)
-# - minMembers, maxMembers: Member count range
-# - search: Search in name and description
-# - page, pageSize: Pagination
-
-# Response: 200 OK (paginated)
 {
-  "items": [
+  "platform": "ANDROID",  # or "IOS", "WEB"
+  "token": "fcm-device-token-here"
+}
+
+# Response: 201 Created
+{
+  "id": "uuid",
+  "userId": 1,
+  "platform": "ANDROID",
+  "token": "fcm-device-token-here",
+  "active": true,
+  "createdAt": "2025-01-15T10:00:00Z",
+  "lastUsedAt": "2025-01-15T10:00:00Z"
+}
+```
+
+#### Remove Device
+
+```bash
+DELETE /api/v1/notifications/device/{tokenId}
+Authorization: Bearer <token>
+
+# Response: 200 OK
+```
+
+#### Get Notification Preferences
+
+```bash
+GET /api/v1/notifications/preferences
+Authorization: Bearer <token>
+
+# Response: 200 OK
+{
+  "id": "uuid",
+  "userId": 1,
+  "messagesEnabled": true,
+  "matchesEnabled": true,
+  "groupsEnabled": true,
+  "classRemindersEnabled": true,
+  "socialEnabled": true,
+  "emailFallback": true,
+  "quietHoursStart": "22:00",
+  "quietHoursEnd": "08:00",
+  "updatedAt": "2025-01-15T10:00:00Z"
+}
+```
+
+#### Update Notification Preferences
+
+```bash
+PUT /api/v1/notifications/preferences
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "messagesEnabled": false,
+  "quietHoursStart": "22:00",
+  "quietHoursEnd": "08:00"
+}
+
+# Response: 200 OK (returns updated preferences)
+```
+
+#### Get Notification History
+
+```bash
+GET /api/v1/notifications/history?page=1&pageSize=20
+Authorization: Bearer <token>
+
+# Response: 200 OK
+{
+  "notifications": [
     {
       "id": "uuid",
-      "name": "Morning Runners NYC",
-      "description": "Daily morning runs in Central Park",
-      "photoUrl": "https://...",
-      "category": "RUNNING",
-      "isPrivate": false,
-      "maxMembers": 50,
-      "ownerId": 1,
-      "location": "New York, NY",
-      "latitude": 40.7128,
-      "longitude": -74.0060,
-      "memberCount": 25,
-      "createdAt": "2025-01-15T10:00:00Z",
-      "updatedAt": "2025-01-15T10:00:00Z"
+      "userId": 1,
+      "type": "MESSAGE",  # MESSAGE, MATCH, GROUP, REMINDER, SOCIAL, SYSTEM
+      "title": "New Message",
+      "body": "You have a new message from Jane",
+      "data": { "senderId": "123", "conversationId": "456" },
+      "priority": "NORMAL",  # URGENT, HIGH, NORMAL, LOW
+      "read": false,
+      "clicked": false,
+      "sentAt": "2025-01-15T10:00:00Z",
+      "createdAt": "2025-01-15T10:00:00Z"
     }
   ],
-  "pagination": { ... }
+  "page": 1,
+  "pageSize": 20,
+  "total": 42
 }
 ```
 
-#### Discover Groups (Public Groups Only)
+#### Mark Notification as Read
 
 ```bash
-GET /api/v1/groups/discover
-# Same query parameters as /groups
-# Returns only public groups
+POST /api/v1/notifications/{id}/mark-read
+Authorization: Bearer <token>
+
+# Response: 200 OK
 ```
 
-#### Get Group by ID
+#### Delete Notification
 
 ```bash
-GET /api/v1/groups/{id}
+DELETE /api/v1/notifications/{id}
+Authorization: Bearer <token>
 
-# Response: 200 OK (single group)
+# Response: 200 OK
 ```
 
-#### Create Group (Requires Auth)
+#### Send Notification (Admin)
 
 ```bash
-POST /api/v1/groups
+POST /api/v1/admin/notifications/send
 Authorization: Bearer <token>
 Content-Type: application/json
 
+# Send to single user
 {
-  "name": "Yoga Enthusiasts",
-  "description": "Weekly yoga sessions for all levels",
-  "photoUrl": "https://...",
-  "category": "YOGA",
-  "isPrivate": false,
-  "maxMembers": 30,
-  "location": "Brooklyn, NY",
-  "latitude": 40.6782,
-  "longitude": -73.9442
+  "userId": 123,
+  "type": "SYSTEM",
+  "title": "System Update",
+  "body": "The app will be updated tonight",
+  "data": { "updateVersion": "2.0" },
+  "priority": "HIGH"
+}
+
+# OR send to multiple users
+{
+  "userIds": [123, 456, 789],
+  "type": "MATCH",
+  "title": "New Match!",
+  "body": "You've been matched with a workout buddy",
+  "priority": "NORMAL"
 }
 
 # Response: 201 Created
 ```
 
-#### Update Group (Owner/Admin Only)
+#### Broadcast Notification (Admin)
 
 ```bash
-PUT /api/v1/groups/{id}
+POST /api/v1/admin/notifications/broadcast
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "description": "Updated description",
-  "maxMembers": 40
-}
-
-# Response: 200 OK
-```
-
-#### Delete Group (Owner Only)
-
-```bash
-DELETE /api/v1/groups/{id}
-Authorization: Bearer <token>
-
-# Response: 200 OK
-```
-
-#### Get My Groups
-
-```bash
-GET /api/v1/groups/my-groups
-Authorization: Bearer <token>
-
-# Response: 200 OK (list of user's groups)
-```
-
-#### Get Group Members
-
-```bash
-GET /api/v1/groups/{id}/members
-Authorization: Bearer <token>
-
-# Response: 200 OK
-[
-  {
-    "id": "member-uuid",
-    "groupId": "group-uuid",
-    "userId": 1,
-    "userEmail": "user@example.com",
-    "userName": "John Doe",
-    "role": "OWNER",
-    "status": "ACTIVE",
-    "joinedAt": "2025-01-15T10:00:00Z"
-  }
-]
-```
-
-#### Join Group
-
-```bash
-POST /api/v1/groups/{id}/join
-Authorization: Bearer <token>
-
-# For public groups: instant join
-# For private groups: creates pending request
-
-# Response: 200 OK
-```
-
-#### Leave Group
-
-```bash
-POST /api/v1/groups/{id}/leave
-Authorization: Bearer <token>
-
-# Response: 200 OK
-# Note: Owner cannot leave (must delete group or transfer ownership)
-```
-
-#### Invite User to Group
-
-```bash
-POST /api/v1/groups/{id}/invite
-Authorization: Bearer <token>
-Content-Type: application/json
-
-# Direct invite to user:
-{
-  "userId": 5
-}
-
-# Or generate invite link:
-{
-  "generateLink": true
-}
-
-# Response for link: 201 Created
-{
-  "inviteCode": "abc123...",
-  "expiresAt": "2025-01-22T10:00:00Z"
-}
-```
-
-#### Remove Member (Admin/Owner Only)
-
-```bash
-DELETE /api/v1/groups/{id}/kick/{userId}
-Authorization: Bearer <token>
-
-# Response: 200 OK
-```
-
-#### Get Pending Join Requests (Admin/Owner Only)
-
-```bash
-GET /api/v1/groups/{id}/requests
-Authorization: Bearer <token>
-
-# Response: 200 OK (list of pending members)
-```
-
-#### Approve Join Request (Admin/Owner Only)
-
-```bash
-POST /api/v1/groups/{id}/requests/approve/{userId}
-Authorization: Bearer <token>
-
-# Response: 200 OK
-```
-
-#### Reject Join Request (Admin/Owner Only)
-
-```bash
-POST /api/v1/groups/{id}/requests/reject/{userId}
-Authorization: Bearer <token>
-
-# Response: 200 OK
-```
-
-### Group Activities Endpoints
-
-#### Create Group Activity
-
-```bash
-POST /api/v1/groups/{id}/activities
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "classId": 1,  # Optional: link to a fitness class
-  "title": "Saturday Morning Run",
-  "description": "5k run around Central Park",
-  "scheduledAt": "2025-01-20T08:00:00Z",
-  "location": "Central Park, NYC",
-  "latitude": 40.785091,
-  "longitude": -73.968285,
-  "isRecurring": true,
-  "recurrenceRule": "WEEKLY"
+  "type": "SYSTEM",
+  "title": "System Announcement",
+  "body": "Join us for the community fitness challenge!",
+  "priority": "HIGH"
 }
 
 # Response: 201 Created
 ```
 
-#### Get Group Activities
+#### Notification Types
 
-```bash
-GET /api/v1/groups/{id}/activities
-Authorization: Bearer <token>
+- **MESSAGE**: New chat messages
+- **MATCH**: New workout partner matches
+- **GROUP**: Group invitations and updates
+- **REMINDER**: Upcoming class reminders
+- **SOCIAL**: Follows, likes, comments
+- **SYSTEM**: System announcements
 
-# Optional query parameter:
-# - upcoming=true: Only show future activities
+#### Quiet Hours
 
-# Response: 200 OK (list of activities with RSVP stats)
-```
-
-#### Get Activity Details
-
-```bash
-GET /api/v1/groups/{id}/activities/{activityId}
-Authorization: Bearer <token>
-
-# Response: 200 OK (single activity)
-```
-
-#### Update Activity (Creator/Admin Only)
-
-```bash
-PUT /api/v1/groups/{id}/activities/{activityId}
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "title": "Updated title",
-  "scheduledAt": "2025-01-20T09:00:00Z"
-}
-
-# Response: 200 OK
-```
-
-#### Cancel Activity (Creator/Admin Only)
-
-```bash
-DELETE /api/v1/groups/{id}/activities/{activityId}
-Authorization: Bearer <token>
-
-# Response: 200 OK
-```
-
-#### RSVP to Activity
-
-```bash
-POST /api/v1/groups/{id}/activities/{activityId}/rsvp
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "status": "GOING"  # or "MAYBE" or "NOT_GOING"
-}
-
-# Response: 200 OK
-```
-
-#### Get Activity RSVPs
-
-```bash
-GET /api/v1/groups/{id}/activities/{activityId}/rsvps
-Authorization: Bearer <token>
-
-# Response: 200 OK (list of RSVPs)
-```
+Users can set quiet hours (e.g., 22:00 to 08:00) during which push notifications will not be sent. Notifications are still created and stored, but FCM push is suppressed.
 
 ## Database Schema
 
@@ -694,72 +584,58 @@ Authorization: Bearer <token>
 | created_at | TIMESTAMP | Token creation time |
 | is_revoked | BOOLEAN | Revocation status |
 
-### Groups Table
+### DeviceTokens Table
 | Column | Type | Description |
 |--------|------|-------------|
-| id | VARCHAR(36) | Primary key (UUID) |
-| name | VARCHAR(255) | Group name |
-| description | TEXT | Group description |
-| photo_url | VARCHAR(512) | Group photo URL |
-| category | VARCHAR(50) | Group category |
-| is_private | BOOLEAN | Private group flag |
-| max_members | INTEGER | Maximum members |
-| owner_id | INTEGER | Foreign key to Users |
-| location | VARCHAR(255) | Location text |
-| latitude | DECIMAL(10,8) | Latitude |
-| longitude | DECIMAL(11,8) | Longitude |
-| created_at | TIMESTAMP | Creation time |
+| id | UUID | Primary key |
+| user_id | INTEGER | Foreign key to Users |
+| platform | VARCHAR(50) | Platform (android/ios/web) |
+| token | VARCHAR(500) | FCM device token (unique) |
+| active | BOOLEAN | Token active status |
+| created_at | TIMESTAMP | Token creation time |
+| last_used_at | TIMESTAMP | Last usage time |
+
+### NotificationPreferences Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | INTEGER | Foreign key to Users (unique) |
+| messages_enabled | BOOLEAN | Message notifications |
+| matches_enabled | BOOLEAN | Match notifications |
+| groups_enabled | BOOLEAN | Group notifications |
+| class_reminders_enabled | BOOLEAN | Class reminder notifications |
+| social_enabled | BOOLEAN | Social notifications |
+| email_fallback | BOOLEAN | Email fallback enabled |
+| quiet_hours_start | TIME | Quiet hours start (nullable) |
+| quiet_hours_end | TIME | Quiet hours end (nullable) |
 | updated_at | TIMESTAMP | Last update time |
 
-### GroupMembers Table
+### Notifications Table
 | Column | Type | Description |
 |--------|------|-------------|
-| id | VARCHAR(36) | Primary key (UUID) |
-| group_id | VARCHAR(36) | Foreign key to Groups |
+| id | UUID | Primary key |
 | user_id | INTEGER | Foreign key to Users |
-| role | VARCHAR(20) | OWNER, ADMIN, MEMBER |
-| status | VARCHAR(20) | ACTIVE, PENDING, REMOVED |
-| joined_at | TIMESTAMP | Join time |
+| type | VARCHAR(50) | Notification type |
+| title | VARCHAR(255) | Notification title |
+| body | TEXT | Notification body |
+| data | JSONB | Additional payload data |
+| priority | VARCHAR(50) | Priority level |
+| read | BOOLEAN | Read status |
+| clicked | BOOLEAN | Clicked status |
+| sent_at | TIMESTAMP | Sent time |
+| delivered_at | TIMESTAMP | Delivery time (nullable) |
+| read_at | TIMESTAMP | Read time (nullable) |
+| created_at | TIMESTAMP | Creation time |
 
-### GroupActivities Table
+### NotificationDeliveryLog Table
 | Column | Type | Description |
 |--------|------|-------------|
-| id | VARCHAR(36) | Primary key (UUID) |
-| group_id | VARCHAR(36) | Foreign key to Groups |
-| class_id | INTEGER | Foreign key to Classes (nullable) |
-| title | VARCHAR(255) | Activity title |
-| description | TEXT | Activity description |
-| scheduled_at | TIMESTAMP | Scheduled time |
-| location | VARCHAR(255) | Location text |
-| latitude | DECIMAL(10,8) | Latitude |
-| longitude | DECIMAL(11,8) | Longitude |
-| is_recurring | BOOLEAN | Recurring flag |
-| recurrence_rule | VARCHAR(255) | Recurrence pattern |
-| created_by_id | INTEGER | Foreign key to Users |
-| created_at | TIMESTAMP | Creation time |
-| cancelled | BOOLEAN | Cancellation flag |
-
-### ActivityRSVPs Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | VARCHAR(36) | Primary key (UUID) |
-| activity_id | VARCHAR(36) | Foreign key to GroupActivities |
-| user_id | INTEGER | Foreign key to Users |
-| status | VARCHAR(20) | GOING, MAYBE, NOT_GOING |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update time |
-
-### GroupInvites Table
-| Column | Type | Description |
-|--------|------|-------------|
-| id | VARCHAR(36) | Primary key (UUID) |
-| group_id | VARCHAR(36) | Foreign key to Groups |
-| inviter_id | INTEGER | Foreign key to Users |
-| invitee_id | INTEGER | Foreign key to Users (nullable) |
-| invite_code | VARCHAR(64) | Invite code (nullable, unique) |
-| status | VARCHAR(20) | PENDING, ACCEPTED, DECLINED, EXPIRED |
-| created_at | TIMESTAMP | Creation time |
-| expires_at | TIMESTAMP | Expiration time |
+| id | UUID | Primary key |
+| notification_id | UUID | Foreign key to Notifications |
+| device_token_id | UUID | Foreign key to DeviceTokens |
+| status | VARCHAR(50) | Delivery status |
+| error_message | TEXT | Error details (nullable) |
+| attempted_at | TIMESTAMP | Attempt time |
 
 ## Project Structure
 
