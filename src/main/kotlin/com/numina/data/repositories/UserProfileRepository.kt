@@ -14,6 +14,7 @@ interface UserProfileRepository {
     suspend fun getProfile(userId: Int): UserProfile?
     suspend fun getPublicProfile(userId: Int, requesterId: Int): PublicProfile?
     suspend fun updateProfile(userId: Int, request: UpdateProfileRequest): UserProfile?
+    suspend fun getAllPublicProfiles(excludeUserId: Int, requesterId: Int): List<PublicProfile>
 }
 
 class UserProfileRepositoryImpl : UserProfileRepository {
@@ -112,5 +113,24 @@ class UserProfileRepositoryImpl : UserProfileRepository {
         UserProfiles.select { UserProfiles.userId eq userId }
             .map { resultRowToProfile(it) }
             .singleOrNull()
+    }
+
+    override suspend fun getAllPublicProfiles(excludeUserId: Int, requesterId: Int): List<PublicProfile> = transaction {
+        UserProfiles.select { UserProfiles.userId neq excludeUserId }
+            .mapNotNull { row ->
+                val profile = resultRowToProfile(row)
+                val settings = profile.privacySettings
+                PublicProfile(
+                    userId = profile.userId,
+                    name = profile.name,
+                    bio = if (settings.bioPublic) profile.bio else null,
+                    locationLat = if (settings.locationPublic) profile.locationLat else null,
+                    locationLong = if (settings.locationPublic) profile.locationLong else null,
+                    fitnessInterests = if (settings.fitnessInterestsPublic) profile.fitnessInterests else null,
+                    fitnessLevel = if (settings.fitnessLevelPublic) profile.fitnessLevel else null,
+                    availability = if (settings.availabilityPublic) profile.availability else null,
+                    photoUrl = profile.photoUrl
+                )
+            }
     }
 }
